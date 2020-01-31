@@ -1,0 +1,344 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="/styles.css">
+	<!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+		<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <!-- <script src="https://navidadmovistar.com.mx/main.js"></script> -->
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<script type="text/javascript">
+
+		</script>
+		<script>
+		$(document).ready(function(e){
+			$('select').on('mousedown',function(event){
+				event.preventDefault();
+			});
+
+    	$('select').formSelect();
+			// $("select[required]").css({display: "inline", height: 0, padding: 0, width: 0});
+			$('.modal').modal();
+
+			cargaEstado();
+
+			$("#fupForm").on('submit', function(e){
+					e.preventDefault();
+					$.ajax({
+							type: 'POST',
+							url: '../submit.php',
+							data: new FormData(this),
+							contentType: false,
+							cache: false,
+							processData:false,
+							beforeSend: function(){
+									$('.submitBtn').attr("disabled","disabled");
+									$('#fupForm').css("opacity",".5");
+							},
+							success: function(result){
+									$('#statusMsg').html('');
+									if(result.success == 1){
+											var selectCiudad = $('#ciudad');
+											selectCiudad.find('option').not(':first').remove();
+											var selectNombre = $('#nombre');
+											selectNombre.find('option').not(':first').remove();
+											var selectIdTienda = $('#idTienda');
+											selectIdTienda.find('option').not(':first').remove();
+											$('select').formSelect();
+											$('#fupForm')[0].reset();
+											M.updateTextFields();
+											$('#statusMsg').html('<span style="font-size:18px;color:#34A853">Registo exitoso, su folio es: '+result.folio+'.</span>');
+											$('#errorMsg').html('');
+											$('#modal1').modal('open');
+									}else{
+											$('#statusMsg').html('<span style="font-size:18px;color:#EA4335">Ocurrió un error, intenta más tarde.</span>');
+											$('#errorMsg').html('');
+											$('#modal1').modal('open');
+									}
+									$('#fupForm').css("opacity","");
+									$(".submitBtn").removeAttr("disabled");
+
+							}
+					});
+			});
+
+			//file type validation
+			$("#file").change(function() {
+					var file = this.files[0];
+					var imagefile = file.type;
+					var match= ["image/jpeg","image/png","image/jpg"];
+					// var maxSize=5120;
+					var maxSize=5120;
+					if(!((imagefile==match[0]) || (imagefile==match[1]) || (imagefile==match[2]))){
+							$('#errorMsg').html('Por favor, selecciona un archivo de imagen válido (JPEG/JPG/PNG).');
+							$('#statusMsg').html('Error');
+							$('#modal1').modal('open');
+							$("#file").val('');
+							return false;
+					}
+					if(file.size/1024 > maxSize){
+							$('#errorMsg').html('El peso máximo es de 5 MGs, selecciona otro archivo.');
+							$('#statusMsg').html('Error');
+							$('#modal1').modal('open');
+							$("#file").val('');
+							return false;
+					}
+			});
+
+			$(document).on('change', '#estado', function (e) {
+				e.stopImmediatePropagation();
+				if(e.target.value !== '' && e.target.value !== null){
+					var selectCiudad = $('#ciudad');
+					selectCiudad.find('option').not(':first').remove();
+					var selectNombre = $('#nombre');
+					selectNombre.find('option').not(':first').remove();
+					var selectIdTienda = $('#idTienda');
+					selectIdTienda.find('option').not(':first').remove();
+					$('#ciudad').prop('selectedIndex',0);
+					$('#nombre').prop('selectedIndex',0);
+					$('#idTienda').prop('selectedIndex',0);
+					$('select').formSelect();
+					cargaCiudad(e.target.value);
+				}
+
+			});
+			$(document).on('change', '#ciudad', function (e) {
+				e.stopImmediatePropagation();
+				if(e.target.value !== '' && e.target.value !== null){
+					var selectNombre = $('#nombre');
+					selectNombre.find('option').not(':first').remove();
+					var selectIdTienda = $('#idTienda');
+					selectIdTienda.find('option').not(':first').remove();
+					$('#nombre').prop('selectedIndex',0);
+					$('#idTienda').prop('selectedIndex',0);
+					$('select').formSelect();
+					cargaTienda(e.target.value);
+				}
+
+			});
+
+			$(document).on('change', '#nombre', function (e) {
+				e.stopImmediatePropagation();
+				if(e.target.value !== '' && e.target.value !== null)
+					$("#idTienda").val(e.target.value);
+					$('#idTienda').formSelect();
+			});
+			$(document).on('change', '#idTienda', function (e) {
+				e.stopImmediatePropagation();
+				if(e.target.value !== '' && e.target.value !== null)
+					$("#nombre").val(e.target.value);
+					$('#nombre').formSelect();
+			});
+		});
+
+		function cargaEstado(){
+			$.ajax({
+					type: 'POST',
+					url: '../combos.php',
+					data: {cadena:'Coppel'},
+					datatype: 'json',
+					success: function(result){
+							if(result.success == 1){
+								var selectList = $('#estado');
+								selectList.find('option').not(':first').remove();
+								$('#estado').prop('selectedIndex',0);
+								var select = document.getElementById("estado");
+								for(var i=0; i<result.estados.length;i++){
+									var option = document.createElement("option");
+									option.text = result.estados[i];
+									option.value = result.estados[i];
+									select.appendChild(option);
+								}
+								$('#estado').formSelect();
+							}else{
+							}
+					}
+			});
+		}
+
+		function cargaCiudad(_estado){
+				$.ajax({
+						type: 'POST',
+						url: '../combos.php',
+						data: {estado: _estado, cadena:'Coppel'},
+						datatype: 'json',
+						success: function(result){
+								if(result.success == 1){
+									var selectList = $('#ciudad');
+									selectList.find('option').not(':first').remove();
+									var select = document.getElementById("ciudad");
+									for(var i=0; i<result.ciudades.length;i++){
+										var option = document.createElement("option");
+										option.text = result.ciudades[i];
+										option.value = result.ciudades[i];
+										select.appendChild(option);
+									}
+									$('#ciudad').formSelect();
+								}else{
+								}
+						}
+				});
+		}
+
+		function cargaTienda(_ciudad){
+				$.ajax({
+						type: 'POST',
+						url: '../combos.php',
+						data: {ciudad: _ciudad, cadena:'Coppel'},
+						datatype: 'json',
+						success: function(result){
+								if(result.success == 1){
+									var selectList = $('#nombre');
+									selectList.find('option').not(':first').remove();
+									var select = document.getElementById("nombre");
+									var selectList2 = $('#idTienda');
+									selectList2.find('option').not(':first').remove();
+									var select2 = document.getElementById("idTienda");
+									for(var i=0; i<result.tiendas.length;i++){
+										var option = document.createElement("option");
+										option.text = result.tiendas[i]['nombre'];
+										option.value = result.tiendas[i]['id'];
+										select.appendChild(option);
+										var option2 = document.createElement("option");
+										option2.text = result.tiendas[i]['idTienda'];
+										option2.value = result.tiendas[i]['id'];
+										select2.appendChild(option2);
+									}
+									$('#nombre').formSelect();
+									$('#idTienda').formSelect();
+								}else{
+								}
+						}
+				});
+		}
+
+		</script>
+
+
+	<title>Navidad Movistar Coppel</title>
+</head>
+<body>
+	<header>
+		<img src="img/logo.png" />
+	</header>
+	<div class="LP">
+		<img class="hide-on-small-only" alt="Esta Navidad vas con todo" src="img/LP_completa_Coppel.jpg" />
+		<img class="hide-on-med-and-up" alt="Esta Navidad vas con todo" src="img/LP_MOBILE_Coppel.jpg" />
+		<div class="row form">
+			<!--div class="col s12">
+				<h2 class="center-align"><b>Solo sigue estos pasos:</b></h2>
+				<ol class="center-align">
+					<li>Registra tu ticket de compra y consérvalo.</li>
+					<li>Da clic en el botón <b>Enviar</b> y listo.</li>
+					<li>Si eres el primero en registrarte, nos pondremos
+						en contacto contigo a través de una llamada.
+						Se te harán 5 intentos de llamada para que puedas atenderla, después deberás: Responder correctamente la pregunta que te haremos, relacionada con Movistar y ¡ya ganaste!.
+					</li>
+					<li>
+						Para recoger tu premio, acude a la tienda donde realizaste tu compra y no olvides traer tu ticket.
+					</li>
+				</ol>
+				<p class="center-align">En caso de no contestar la llamada en máximo 5 intentos o contestar incorrectamente la pregunta, se contactará a la siguiente compra consecutiva registrada hasta obtener un ganador y así hasta obtener los 40 ganadores conforme el orden de registro.</p>
+ 				<p class="center-align">Para dudas y aclaraciones comunícate al <b>800 461 0288</b>.</p>
+			</div-->
+			<div class="col s12">
+				<h2 class="center-align"><b>Completa tu registro</b></h2>
+				<p class="center-align">Todos los campos con (*) son obligatorios.</p>
+		    <form enctype="multipart/form-data" id="fupForm" >
+		        <div class="input-field col s12">
+		            <input type="text" class="form-control" id="name" name="name" pattern="(?!^\d+$)^.+$" title="Ingresa un nombre real" placeholder="Ingresa tu nombre completo" required />
+								<label for="name">*Nombre completo</label>
+								<small>Como aparece en tu identificación oficial</small>
+		        </div>
+		        <div class="input-field col s12">
+		            <input type="tel" class="form-control" id="tel" name="tel" min="10" maxlength="10" pattern="[0-9]{10}" title="Ingresa un teléfono real, 10 dígitos" placeholder="Ingresa tu teléfono" required />
+								<label for="tel">*Teléfono a 10 dígitos</label>
+		        </div>
+						<h2 class="center-align"><b>Datos de tu compra <a class="tooltipped" data-position="top"style="padding-left: 12px;position: absolute;right:auto;top:auto;"><img style="width:31px;" src="img/Bi.png" /></a></b></h2>
+		        <div class="file-field input-field col s12">
+							<div class="btn col s12">
+								<span><img class="icoBoton" src="img/flecha.png" /> Subir imagen de tu ticket</span>
+								<input type="file" id="file" name="file" required />
+							</div>
+							<div class="file-path-wrapper col s12">
+				        <input class="file-path" id="textoFile" type="text" disabled placeholder="Formatos de imagen: .jpg / .jpeg / .png">
+				      </div>
+		        </div>
+		        <div class="input-field col s12">
+		            <select id="estado" name="estado" required>
+		              <option disabled selected value="">Seleccionar</option>
+		            </select>
+								<label for="estado">*Estado</label>
+		        </div>
+		        <div class="input-field col s12">
+		          <select id="ciudad" name="ciudad" required>
+		            <option disabled selected value="">Seleccionar</option>
+		          </select>
+							<label for="ciudad">*Ciudad</label>
+		        </div>
+
+		        <div class="input-field col s12 m6">
+		            <select id="nombre" name="nombre" required>
+		              <option disabled selected value="">Seleccionar</option>
+		            </select>
+								<label for="nombre">*Nombre de Tienda</label>
+								<a class="tooltipped" data-position="top"><img style="width:31px;" src="img/Bi.png" /></a>
+		        </div>
+		        <div class="input-field col s12 m6">
+		          <select id="idTienda" name="idTienda" required>
+		            <option disabled selected value="">Seleccionar</option>
+		          </select>
+							<label for="idTienda">*# de tienda</label>
+							<a class="tooltipped" data-position="top"><img style="width:31px;" src="img/Bi.png" /></a>
+		        </div>
+		        <div class="input-field col s12">
+		          <p>
+								<label for="terms" class="hidde">
+				          <input type="checkbox" class="filled-in" required id="terms" name="terms">
+									<span>Aceptar <a href="131119_Navidad_Retail_2019_TyCos_Coppel2019-014.pdf" target="_blank">Términos y condiciones</a></span>
+								</label>
+							</p>
+		        </div>
+		        <div class="input-field col s12">
+							<p>
+								<label for="aviso" class="hidde">
+			          	<input type="checkbox" class="filled-in" required id="aviso" name="aviso">
+									<span>Aceptar <a href="/AVISO-PRIVACIDAD-UNIFICADO.pdf" target="_blank">Aviso de Privacidad</a></span>
+								</label>
+							</p>
+		        </div>
+
+		        <input type="submit" name="submit" class="btn btn-danger submitBtn" style="width:100%;" value="Enviar"/>
+		    </form>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col s12">
+				<p class="center-align"><a href="faqs/" target="_blank">Preguntas frecuentes</a></p>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal Structure -->
+  <div id="modal1" class="modal">
+    <div class="modal-content">
+      <h4 id='statusMsg'>Modal Header</h4>
+			<p id="errorMsg"></p>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-close waves-effect waves-green btn-flat">Aceptar</a>
+    </div>
+  </div>
+
+  <script>
+		$('.tooltipped').tooltip({
+	html: "<img src='img/TicketCoppel2.jpg'>"
+});
+
+	</script>
+</body>
+</html>

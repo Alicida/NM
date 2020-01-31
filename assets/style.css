@@ -1,0 +1,36 @@
+body{
+ background: linear-gradient(to bottom, #dcdcdc, white);
+}
+
+button{
+	border-radius: 6px; 
+	padding: 8%; 
+	border: solid 1px #00c600; 
+	background-color: transparent;
+	color: #00c600;
+	margin: 3%;
+	min-width: 80px;
+	width:auto;
+}
+
+button:hover{
+	background-color: #00c600!important; 
+	color: #fff!important;
+}
+
+
+
+  @media (max-width: 614px) {
+    body{
+   		background-image: url("images/navidad-persona.jpg");
+   		background-size: cover;
+    	background-repeat: no-repeat;
+	}
+
+	.body-copie {
+		padding-top: 85%!important;
+	}
+	.seccion-btn{
+		padding-bottom: 50%!important;
+}
+}
